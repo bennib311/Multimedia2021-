@@ -1,37 +1,62 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "bitmap.h"
 
-static void manipulate(bitmap_pixel_hsv_t* pixels, uint32_t count)
+static void manipulate(bitmap_pixel_hsv_t* pixels, uint32_t count, int value)
 {
 		for (uint32_t x = 0; x < count; x++)
 		{
 
 			bitmap_pixel_hsv_t* pix = &pixels[x];
 
-			if ((pix->v + 50) > 255) {
+			if ((pix->v + value) > 255) {
 				pix->v = 255;
 			} 
-			else if ((pix->v + 50) < 0) {
+			else if ((pix->v + value) < 0) {
 				pix->v = 0;
 			}
 			else {
-				pix->v = (pix->v + 50);
+				pix->v = (pix->v + value);
 			}
 		}	
 }
 
-int main(void)
+int main(int argc, char* argv[])
 {
+
+	if (argc != 4) {
+		printf("Bitte geben Sie 3 Kommandozeilenparamter in der der folgenden Form an: <Dateipfad> <Funktionsparameter> <Hellichkeitswert>\n");
+		return 0;
+	}
+	
+	int manvalue;
+	sscanf(argv[3], "%d", &manvalue);
+
+	if (manvalue < -100 || manvalue > 100) {
+
+		printf("Bitte geben Sie einen Wert zwischen -100 und +100 ein.\n");
+		return 0;
+	}
+
 	//Read bitmap pixels, convert to HSV:
 	bitmap_pixel_hsv_t* pixels;
 	uint32_t widthPx, heightPx;
 
-	bitmap_error_t error = bitmapReadPixels("sails.bmp", (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
+	bitmap_error_t error = bitmapReadPixels(argv[1], (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
 	assert(error == BITMAP_ERROR_SUCCESS);
 
-	manipulate(pixels, widthPx * heightPx);
+	if (strcmp(argv[2], "b") == 0) {
+
+		manipulate(pixels, widthPx * heightPx, manvalue);
+	}
+	else {
+
+		printf("Sorry, diese Funktion steht nicht zur Verfügung.\n");
+		return 0;
+	}
 
 	//Write bitmap pixels, assume HSV in source:
 	bitmap_parameters_t params;
@@ -44,7 +69,9 @@ int main(void)
 	params.dibHeaderFormat = BITMAP_DIB_HEADER_INFO;
 	params.colorSpace = BITMAP_COLOR_SPACE_HSV;
 
-	error = bitmapWritePixels("test.mod.bmp", BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
+	char ausg[25] = "mod_";
+	strcat(ausg, argv[1]);
+	error = bitmapWritePixels(ausg, BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
 	assert(error == BITMAP_ERROR_SUCCESS);
 
 	//Free the pixel array:

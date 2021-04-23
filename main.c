@@ -5,6 +5,7 @@
 
 #include "bitmap.h"
 
+// Funktion zum Abdunkeln/Aufhellen
 static void manipulate(bitmap_pixel_hsv_t* pixels, uint32_t count, int value)
 {
 		for (uint32_t x = 0; x < count; x++)
@@ -69,9 +70,26 @@ int main(int argc, char* argv[])
 	params.dibHeaderFormat = BITMAP_DIB_HEADER_INFO;
 	params.colorSpace = BITMAP_COLOR_SPACE_HSV;
 
-	char ausg[25] = "mod_";
-	strcat(ausg, argv[1]);
-	error = bitmapWritePixels(ausg, BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
+
+	// Zur korrekten Umbenennung der Ausgabedatei:
+	char manip[50] = "\0";
+	
+	if (manvalue >= 0) {
+		strcat(manip, "brighter_");
+	}
+	else {
+		strcat(manip, "darker_");
+	}
+
+	int absv = abs(manvalue);
+	char abss[11];
+	sprintf(abss, "%d", absv);
+
+	strcat(manip, abss);
+	strcat(manip, "_");
+	strcat(manip, argv[1]);
+
+	error = bitmapWritePixels(manip, BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
 	assert(error == BITMAP_ERROR_SUCCESS);
 
 	//Free the pixel array:

@@ -6,39 +6,38 @@
 #include "bitmap.h"
 
 // Funktion zum Abdunkeln/Aufhellen
-static void manipulate(bitmap_pixel_hsv_t* pixels, uint32_t count, int value)
+static void manipulate(bitmap_pixel_hsv_t* pixels, uint32_t count, float d)
 {
 		for (uint32_t x = 0; x < count; x++)
 		{
-
 			bitmap_pixel_hsv_t* pix = &pixels[x];
 
-			if ((pix->v + value) > 255) {
-				pix->v = 255;
-			} 
-			else if ((pix->v + value) < 0) {
-				pix->v = 0;
+			if (d >= 0) {
+				pix->v += (255 - pix->v) * d;
 			}
 			else {
-				pix->v = (pix->v + value);
+				pix->v += pix->v * d;
 			}
-		}	
+
+			
+		}
 }
+
 
 int main(int argc, char* argv[])
 {
 
-	if (argc != 4) {
-		printf("Bitte geben Sie 3 Kommandozeilenparamter in der der folgenden Form an: <Dateipfad> <Funktionsparameter> <Hellichkeitswert>\n");
+	//Kontrolle der richtigen Benutzereingabe
+	if (argc != 2) {
+		printf("Bitte geben Sie (ausschließlich) den Parameter d als Kommandozeilenparameter an.\n");
 		return 0;
 	}
-	
-	int manvalue;
-	sscanf(argv[3], "%d", &manvalue);
 
-	if (manvalue < -100 || manvalue > 100) {
+	float d = atof(argv[1]);
 
-		printf("Bitte geben Sie einen Wert zwischen -100 und +100 ein.\n");
+	if (d < -1 || d > 1) {
+
+		printf("Bitte geben Sie einen Wert zwischen -1 und +1 ein.\n");
 		return 0;
 	}
 
@@ -46,18 +45,10 @@ int main(int argc, char* argv[])
 	bitmap_pixel_hsv_t* pixels;
 	uint32_t widthPx, heightPx;
 
-	bitmap_error_t error = bitmapReadPixels(argv[1], (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
+	bitmap_error_t error = bitmapReadPixels("test.bmp", (bitmap_pixel_t**)&pixels, &widthPx, &heightPx, BITMAP_COLOR_SPACE_HSV);
 	assert(error == BITMAP_ERROR_SUCCESS);
 
-	if (strcmp(argv[2], "b") == 0) {
-
-		manipulate(pixels, widthPx * heightPx, manvalue);
-	}
-	else {
-
-		printf("Sorry, diese Funktion steht nicht zur Verfügung.\n");
-		return 0;
-	}
+	manipulate(pixels, widthPx * heightPx, d);
 
 	//Write bitmap pixels, assume HSV in source:
 	bitmap_parameters_t params;
@@ -71,25 +62,7 @@ int main(int argc, char* argv[])
 	params.colorSpace = BITMAP_COLOR_SPACE_HSV;
 
 
-	// Zur korrekten Umbenennung der Ausgabedatei:
-	char manip[50] = "\0";
-	
-	if (manvalue >= 0) {
-		strcat(manip, "brighter_");
-	}
-	else {
-		strcat(manip, "darker_");
-	}
-
-	int absv = abs(manvalue);
-	char abss[11];
-	sprintf(abss, "%d", absv);
-
-	strcat(manip, abss);
-	strcat(manip, "_");
-	strcat(manip, argv[1]);
-
-	error = bitmapWritePixels(manip, BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
+	error = bitmapWritePixels("test_mod.bmp", BITMAP_BOOL_TRUE, &params, (bitmap_pixel_t*)pixels);
 	assert(error == BITMAP_ERROR_SUCCESS);
 
 	//Free the pixel array:

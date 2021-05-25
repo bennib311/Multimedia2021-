@@ -40,17 +40,17 @@ typedef enum __state_t__
 
 static void compress(FILE* input, FILE* output) {
 
-	// Init the state machine.
-	uint8_t b1 = 0;
-	uint8_t b2 = 0;
-	uint8_t sb = 0;
-	uint8_t puffer[127];
-	size_t count = 0;
+	uint8_t b1 = 0; //das erste Byte, welches eingelesen wird
+	uint8_t b2 = 0;	//das zweite Byte, welches eingelesen wird
+	uint8_t sb = 0; //das Statusbyte
+	uint8_t puffer[127]; //Der Puffer, in den die Bytes einer heterogenen Gruppe geschoben werden, bis diese zu Ende ist
+	size_t count = 0; 
 	state_t state = STATE_IND;
 
 	read_byte(input, &b1);
 	read_byte(input, &b2);
-
+	
+	//Start der Kompression mit den ersten 2 Bytes des Bitstroms zur Initialisierung
 	if (b1 == b2) {
 		state = STATE_HOM;
 		count = 2;
@@ -63,18 +63,19 @@ static void compress(FILE* input, FILE* output) {
 	}
 
 	b1 = b2;
-
+	
+	//Kompression der restlichen Daten
 	while (read_byte(input, &b2)) {
 		
 		switch (state) {
 
 			case STATE_HOM:
 
-				if (b1 == b2) {
+				if (b1 == b2) { //Homogene Gruppe setzt sich fort
 					if (count < 127) {
 						count++;
 					}
-					else {
+					else { //Falls Grenze von 127 Byte erreicht: "Zwischenschreiben"
 						sb |= (1 << 7);
 						sb |= (uint8_t)count;
 						write_byte(output, sb);
@@ -83,7 +84,7 @@ static void compress(FILE* input, FILE* output) {
 						state = STATE_HOM;
 					}
 				}
-				else {
+				else { //Nun folgt entweder eine andere homogene Gruppe oder eine heterogene Gruppe
 					sb |= (1 << 7);
 					sb |= (uint8_t)count;
 					write_byte(output, sb);
@@ -94,7 +95,7 @@ static void compress(FILE* input, FILE* output) {
 			
 			case STATE_HET:
 
-				if (b1 == b2) {
+				if (b1 == b2) { //Heterogene Gruppe beendet, also in output schreiben. Es folgt eine homogene Gruppe.
 					sb &= ~ (1 << 7);
 					sb |= (uint8_t)count;
 					write_byte(output, sb);
@@ -105,11 +106,11 @@ static void compress(FILE* input, FILE* output) {
 					state = STATE_HOM;
 				}
 				else {
-					if (count < 127) {
+					if (count < 127) { //Heterogene Gruppe setzt sich fort
 						puffer[count] = b1;
 						count++;
 					}
-					else {
+					else { //Falls Grenze von 127 Byte erreicht: "Zwischenschreiben"
 						sb &= ~ (1 << 7);
 						sb |= (uint8_t)count;
 						write_byte(output, sb);
@@ -123,7 +124,7 @@ static void compress(FILE* input, FILE* output) {
 
 			case STATE_IND:
 
-				if (b1 == b2) {
+				if (b1 == b2) { 
 					count = 2;
 					state = STATE_HOM;
 				}
@@ -195,6 +196,7 @@ int main(int argc, char** argv)
 	FILE* input = stdin;
 	FILE* output = stdout;
 	
+	//Auswahl, ob Kompression oder Dekompression
 	if (strcmp(argv[1], "-d") == 0) {
 
 		decompress(input, output);

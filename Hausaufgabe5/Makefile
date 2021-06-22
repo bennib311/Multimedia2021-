@@ -9,7 +9,7 @@ else
 	LDFLAGS=-lglfw -ldl
 endif
 
-TARGET=hello-triangle.out
+TARGET=polygon.out
 OBJECTS=$(patsubst %.c, %.o, $(wildcard src/*.c))
 
 all: $(TARGET)

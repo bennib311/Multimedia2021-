@@ -464,14 +464,17 @@ void init_gl(GLFWwindow* window)
 
 void update_gl(GLFWwindow* window)
 {
+    // Startvelocity
     int Y_ANGULAR_VELOCITY = 0;
     
+    // Rightarrow 
     int state_c_clockwise = glfwGetKey(window, GLFW_KEY_RIGHT);
     if (state_c_clockwise == GLFW_PRESS)
     {
         Y_ANGULAR_VELOCITY = 2;
     }
 
+    // Leftarrow
     int state_clockwise = glfwGetKey(window, GLFW_KEY_LEFT);
     if (state_clockwise == GLFW_PRESS)
     {
